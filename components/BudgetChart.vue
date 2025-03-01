@@ -4,7 +4,7 @@
     
     <div class="flex justify-center mb-4">
       <div class="relative w-48 h-48">
-        <svg viewBox="0 0 100 100" class="w-full h-full">
+        <svg viewBox="0 0 100 100" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <circle
             cx="50"
             cy="50"
@@ -21,10 +21,9 @@
             fill="none"
             :stroke="getProgressColor"
             stroke-width="10"
-            stroke-dasharray="282.7"
+            :stroke-dasharray="circumference"
             :stroke-dashoffset="calculateOffset"
             transform="rotate(-90 50 50)"
-            class="transition-all duration-700 ease-out"
           />
         </svg>
 
@@ -85,14 +84,18 @@ const props = defineProps({
   }
 });
 
+const circumference = computed(() => {
+  return 2 * Math.PI * 45;
+});
+
 const percentage = computed(() => {
   if (props.budget <= 0) return 0;
   return Math.min(Math.round((props.spent / props.budget) * 100), 100);
 });
 
 const calculateOffset = computed(() => {
-  const circumference = 2 * Math.PI * 45;
-  const offset = circumference - (percentage.value / 100) * circumference;
+  if (props.budget <= 0) return circumference.value;
+  const offset = circumference.value - (percentage.value / 100) * circumference.value;
   return offset;
 });
 
@@ -117,7 +120,6 @@ const getAvailableClass = computed(() => {
 </script>
 
 <style scoped>
-
 .pt-24 {
   padding-top: 2rem; 
 }
