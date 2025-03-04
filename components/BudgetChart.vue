@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-sm">
+  <div class="bg-white p-6 w-full max-w-sm">
     <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">Resumen de Presupuesto</h3>
     
     <div class="flex justify-center mb-4">

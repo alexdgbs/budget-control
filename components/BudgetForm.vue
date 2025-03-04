@@ -69,6 +69,7 @@
             placeholder="0.00"
           />
         </div>
+
         <label for="totalBudget" class="block mt-4 mb-2 font-medium text-gray-700 text-sm">Presupuesto Total</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -82,19 +83,36 @@
             step="0.01"
             class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
             placeholder="Presupuesto Total"
-            @input="updateBudget"
+            :disabled="!!savedBudget"
           />
         </div>
+
+        <button
+          @click="savedBudget ? resetBudget() : updateBudget()"
+          :class="[ 
+            'w-full mt-6 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center',
+            (savedBudget || (totalBudget > 0)) 
+              ? 'bg-sky-600 hover:bg-sky-700 text-white' 
+              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          ]"  
+          :disabled="!savedBudget && totalBudget <= 0"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path v-if="!savedBudget" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+          </svg>
+          {{ savedBudget ? 'Reiniciar Presupuesto' : 'Agregar Presupuesto' }}
+        </button>
 
         <button
           @click="submitExpense"
           :class="[ 
             'w-full mt-6 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center',
-            (expenseName && expenseAmount > 0 && totalBudget > 0) 
+            (expenseName && expenseAmount > 0 && savedBudget) 
               ? 'bg-sky-600 hover:bg-sky-700 text-white' 
               : 'bg-gray-200 text-gray-500 cursor-not-allowed'
           ]"  
-          :disabled="!expenseName || expenseAmount <= 0 || totalBudget <= 0"
+          :disabled="!expenseName || expenseAmount <= 0 || !savedBudget"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -107,16 +125,25 @@
 </template>
 
 <script setup>
-import { ref, defineEmits } from 'vue';
+import { ref, onMounted, defineEmits } from 'vue';
 
 const expenseName = ref('');
 const expenseAmount = ref('');
 const totalBudget = ref('');
+const savedBudget = ref(null);
 const emit = defineEmits(['add-expense', 'set-budget']);
 const showSidebar = ref(false);
 
+onMounted(() => {
+  const storedBudget = localStorage.getItem('totalBudget');
+  if (storedBudget) {
+    savedBudget.value = Number(storedBudget);
+    emit('set-budget', savedBudget.value);
+  }
+});
+
 const submitExpense = () => {
-  if (expenseName.value && Number(expenseAmount.value) > 0) {
+  if (expenseName.value && Number(expenseAmount.value) > 0 && savedBudget.value) {
     emit('add-expense', { 
       name: expenseName.value, 
       amount: Number(expenseAmount.value) 
@@ -131,7 +158,19 @@ const submitExpense = () => {
 };
 
 const updateBudget = () => {
-  emit('set-budget', totalBudget.value);
+  if (totalBudget.value > 0) {
+    savedBudget.value = totalBudget.value;
+    localStorage.setItem('totalBudget', totalBudget.value.toString());
+    emit('set-budget', savedBudget.value);
+    totalBudget.value = '';
+  }
+};
+
+const resetBudget = () => {
+  savedBudget.value = null;
+  localStorage.removeItem('totalBudget');
+  totalBudget.value = '';
+  emit('set-budget', 0);
 };
 
 const toggleSidebar = () => {
@@ -140,7 +179,6 @@ const toggleSidebar = () => {
 </script>
 
 <style scoped>
-/* Navbar */
 header {
   position: fixed;
   top: 0;
@@ -154,7 +192,6 @@ header {
   justify-content: space-between;
 }
 
-/* Sidebar */
 .sidebar {
   top: 4rem;
 }
@@ -176,7 +213,7 @@ header {
 }
 
 .p-6 {
-  padding: 1.5rem;
+  padding: 16;
 }
 
 input {
